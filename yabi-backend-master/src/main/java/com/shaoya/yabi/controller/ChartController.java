@@ -11,20 +11,19 @@ import com.shaoya.yabi.constant.CommonConstant;
 import com.shaoya.yabi.constant.UserConstant;
 import com.shaoya.yabi.exception.BusinessException;
 import com.shaoya.yabi.exception.ThrowUtils;
-import com.shaoya.yabi.model.dto.chart.ChartAddRequest;
-import com.shaoya.yabi.model.dto.chart.ChartEditRequest;
-import com.shaoya.yabi.model.dto.chart.ChartQueryRequest;
-import com.shaoya.yabi.model.dto.chart.ChartUpdateRequest;
+import com.shaoya.yabi.model.dto.chart.*;
 import com.shaoya.yabi.model.entity.Chart;
 import com.shaoya.yabi.model.entity.User;
 import com.shaoya.yabi.service.ChartService;
 import com.shaoya.yabi.service.UserService;
+import com.shaoya.yabi.utils.ExcelUtils;
 import com.shaoya.yabi.utils.SqlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -232,6 +231,7 @@ public class ChartController {
         }
         Long id = chartQueryRequest.getId();
         String goal = chartQueryRequest.getGoal();
+        String name = chartQueryRequest.getName();
         String chartType = chartQueryRequest.getChartType();
         Long userId = chartQueryRequest.getUserId();
         String sortField = chartQueryRequest.getSortField();
@@ -239,6 +239,7 @@ public class ChartController {
 
         queryWrapper.lambda().eq(id > 0, Chart::getId, id)
                 .eq(StringUtils.isNotEmpty(goal), Chart::getGoal, goal)
+                .like(StringUtils.isNotBlank(name), Chart::getName, name)
                 .eq(StringUtils.isNotEmpty(chartType), Chart::getChartType, chartType)
                 .eq(ObjectUtils.isNotEmpty(userId), Chart::getUserId, userId)
                 .eq(Chart::getIsDelete, false);
@@ -248,4 +249,30 @@ public class ChartController {
         return queryWrapper;
     }
 
+    /**
+     * 智能分析
+     *
+     * @param multipartFile
+     * @param genChartByAiRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/gen")
+    public BaseResponse<String> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
+                                             GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+        String name = genChartByAiRequest.getName();
+        String goal = genChartByAiRequest.getGoal();
+        String chartType = genChartByAiRequest.getChartType();
+
+        // 检验
+        // 分析目标为空则抛出异常
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "分析目标为空");
+        // 名称长度大于 100 则抛出异常
+        ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
+        String data = ExcelUtils.excelTOCsv(multipartFile);
+        StringBuilder userInput = new StringBuilder();
+        userInput.append("分析目标：").append(goal).append("\n");
+        userInput.append("数据：").append(data).append("\n");
+        return ResultUtils.success(userInput.toString());
+    }
 }

@@ -8,7 +8,8 @@ import java.util.Date;
 
 /**
  * 图表信息表
- * @TableName chart
+ *
+ * @author shaoyafan
  */
 @TableName(value ="chart")
 @Data
@@ -23,6 +24,11 @@ public class Chart implements Serializable {
      * 分析目标
      */
     private String goal;
+
+    /**
+     * 图表名称
+     */
+    private String name;
 
     /**
      * 图表数据

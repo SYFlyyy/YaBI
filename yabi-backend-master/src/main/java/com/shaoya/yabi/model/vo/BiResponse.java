@@ -16,7 +16,7 @@ public class BiResponse {
     /**
      * 生成的分析结论
      */
-    private String getResult;
+    private String genResult;
 
     /**
      * 生成的图表 id

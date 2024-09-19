@@ -11,9 +11,11 @@ import com.shaoya.yabi.constant.CommonConstant;
 import com.shaoya.yabi.constant.UserConstant;
 import com.shaoya.yabi.exception.BusinessException;
 import com.shaoya.yabi.exception.ThrowUtils;
+import com.shaoya.yabi.manager.AiManager;
 import com.shaoya.yabi.model.dto.chart.*;
 import com.shaoya.yabi.model.entity.Chart;
 import com.shaoya.yabi.model.entity.User;
+import com.shaoya.yabi.model.vo.BiResponse;
 import com.shaoya.yabi.service.ChartService;
 import com.shaoya.yabi.service.UserService;
 import com.shaoya.yabi.utils.ExcelUtils;
@@ -43,6 +45,9 @@ public class ChartController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private AiManager aiManager;
 
     // region 增删改查
 
@@ -258,21 +263,54 @@ public class ChartController {
      * @return
      */
     @PostMapping("/gen")
-    public BaseResponse<String> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
+    public BaseResponse<BiResponse> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
                                              GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         String name = genChartByAiRequest.getName();
         String goal = genChartByAiRequest.getGoal();
         String chartType = genChartByAiRequest.getChartType();
-
         // 检验
         // 分析目标为空则抛出异常
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "分析目标为空");
         // 名称长度大于 100 则抛出异常
         ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
-        String data = ExcelUtils.excelTOCsv(multipartFile);
+        User loginUser = userService.getLoginUser(request);
+        long biModelId = 1836411817918394369L;
         StringBuilder userInput = new StringBuilder();
-        userInput.append("分析目标：").append(goal).append("\n");
-        userInput.append("数据：").append(data).append("\n");
-        return ResultUtils.success(userInput.toString());
+        userInput.append("分析需求：").append("\n");
+        String userGoal = goal;
+        // 如果图表类型不为空
+        if(StringUtils.isNotBlank(chartType)) {
+            // 分析目标拼接上图表类型
+            userGoal += "，请使用：" + chartType;
+        }
+        userInput.append(userGoal).append("\n");
+        userInput.append("原始数据：").append("\n");
+        // 将数据转换为 csv 格式
+        String csvData = ExcelUtils.excelTOCsv(multipartFile);
+        userInput.append(csvData).append("\n");
+        String result = aiManager.doChat(biModelId, userInput.toString());
+        // 对结果进行拆分
+        String[] split = result.split("【【【【【");
+        if (split.length < 3) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "AI 生成错误");
+        }
+        String genChart = split[1].trim();
+        String genResult = split[2].trim();
+        // 插入到数据库
+        Chart chart = new Chart();
+        chart.setName(name);
+        chart.setGoal(goal);
+        chart.setChartType(chartType);
+        chart.setChartData(csvData);
+        chart.setGenChart(genChart);
+        chart.setGenResult(genResult);
+        chart.setUserId(loginUser.getId());
+        boolean save = chartService.save(chart);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+        BiResponse biResponse = new BiResponse();
+        biResponse.setGenChart(genChart);
+        biResponse.setGenResult(genResult);
+        biResponse.setChartId(chart.getId());
+        return ResultUtils.success(biResponse);
     }
 }

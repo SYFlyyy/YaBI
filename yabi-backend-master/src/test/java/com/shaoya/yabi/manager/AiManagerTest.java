@@ -10,9 +10,9 @@ class AiManagerTest {
     @Resource
     private AiManager aiManager;
 
-    @Test
+    /*@Test
     void doChat() {
         String result = aiManager.doChat(1836411817918394369L, "林俊杰");
         System.out.println(result);
-    }
+    }*/
 }

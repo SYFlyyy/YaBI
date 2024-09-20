@@ -6,30 +6,30 @@ import React, {useState} from "react";
 import ReactECharts from 'echarts-for-react';
 
 const AddChart: React.FC = () => {
-  const options = {
-    grid: { top: 8, right: 8, bottom: 24, left: 36 },
-    xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    },
-    yAxis: {
-      type: 'value',
-    },
-    series: [
-      {
-        data: [820, 932, 901, 934, 1290, 1330, 1320],
-        type: 'line',
-        smooth: true,
-      },
-    ],
-    tooltip: {
-      trigger: 'axis',
-    },
-  };
+  // const option = {
+  //   xAxis: {
+  //     type: 'category',
+  //     data: ['1号', '2号', '3号']
+  //   },
+  //   yAxis: {
+  //     type: 'value'
+  //   },
+  //   series: [{
+  //     data: [10, 20, 30],
+  //     type: 'line'
+  //   }]
+  // };
   // 定义状态，接收后端的返回值
   const [chart, setChart] = useState<API.BiResponse>();
+  const [option, setOption] = useState<any>();
+  // 提交中的状态
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   const onFinish = async (value: any) => {
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
     const params = {
       ...value,
       file: undefined,
@@ -40,10 +40,18 @@ const AddChart: React.FC = () => {
         message.error('分析失败');
       } else {
         message.success('分析成功');
+        const chartOption = JSON.parse(res.data.genChart ?? '');
+        if (!chartOption) {
+          throw new Error('图表代码解析错误');
+        } else {
+          setChart(res.data);
+          setOption(chartOption);
+        }
       }
     } catch (e: any) {
       message.error('分析失败，' + e.message);
     }
+    setSubmitting(false);
   };
 
   return (
@@ -65,7 +73,7 @@ const AddChart: React.FC = () => {
 
         {/*图表类型*/}
         <Form.Item
-          name="selectChartType"
+          name="chartType"
           label="图表类型"
         >
           <Select
@@ -104,7 +112,11 @@ const AddChart: React.FC = () => {
       </div>
       <div>
         生成图表：
-        <ReactECharts option={options} />
+        {/* 如果它存在，才渲染这个组件 */}
+        {
+          // 后端返回的代码是字符串，不是对象，用JSON.parse解析成对象
+          option && <ReactECharts option={option}/>
+        }
       </div>
     </div>
   );

@@ -95,6 +95,8 @@ const Login: React.FC = () => {
           setInitialState({
             loginUser: res.data,
           });
+        } else {
+          message.error(res.message);
         }
       } catch (error) {
         const defaultLoginFailureMessage = '登录失败，请重试！';

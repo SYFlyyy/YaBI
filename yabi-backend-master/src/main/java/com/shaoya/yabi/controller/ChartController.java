@@ -186,6 +186,8 @@ public class ChartController {
         }
         User loginUser = userService.getLoginUser(request);
         chartQueryRequest.setUserId(loginUser.getId());
+        chartQueryRequest.setSortField("createTime");
+        chartQueryRequest.setSortOrder(CommonConstant.SORT_ORDER_DESC);
         long current = chartQueryRequest.getCurrent();
         long size = chartQueryRequest.getPageSize();
         // 限制爬虫
@@ -242,7 +244,7 @@ public class ChartController {
         String sortField = chartQueryRequest.getSortField();
         String sortOrder = chartQueryRequest.getSortOrder();
 
-        queryWrapper.lambda().eq(id > 0, Chart::getId, id)
+        queryWrapper.lambda().eq(id != null && id > 0, Chart::getId, id)
                 .eq(StringUtils.isNotEmpty(goal), Chart::getGoal, goal)
                 .like(StringUtils.isNotBlank(name), Chart::getName, name)
                 .eq(StringUtils.isNotEmpty(chartType), Chart::getChartType, chartType)

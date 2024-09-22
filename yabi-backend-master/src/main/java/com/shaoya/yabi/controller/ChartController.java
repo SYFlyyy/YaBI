@@ -1,5 +1,6 @@
 package com.shaoya.yabi.controller;
 
+import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shaoya.yabi.annotation.AuthCheck;
@@ -12,6 +13,7 @@ import com.shaoya.yabi.constant.UserConstant;
 import com.shaoya.yabi.exception.BusinessException;
 import com.shaoya.yabi.exception.ThrowUtils;
 import com.shaoya.yabi.manager.AiManager;
+import com.shaoya.yabi.manager.RedisLimiterManager;
 import com.shaoya.yabi.model.dto.chart.*;
 import com.shaoya.yabi.model.entity.Chart;
 import com.shaoya.yabi.model.entity.User;
@@ -29,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 图表接口
@@ -48,6 +52,9 @@ public class ChartController {
 
     @Resource
     private AiManager aiManager;
+
+    @Resource
+    private RedisLimiterManager redisLimiterManager;
 
     // region 增删改查
 
@@ -275,7 +282,23 @@ public class ChartController {
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "分析目标为空");
         // 名称长度大于 100 则抛出异常
         ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
+
+        // 校验文件
+        long size = multipartFile.getSize();
+        String fileName = multipartFile.getOriginalFilename();
+        // 文件大小限制 1MB
+        final long ONE_MB = 1024 * 1024;
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "文件超过 1MB");
+        // 校验文件后缀
+        System.out.println(fileName);
+        String suffix = FileUtil.getSuffix(fileName);
+        final List<String> validFileSuffix = Arrays.asList("xlsx", "png", "jpg", "svg", "webp", "jpeg");
+        ThrowUtils.throwIf(!validFileSuffix.contains(suffix), ErrorCode.PARAMS_ERROR, "文件格式非法");
+
         User loginUser = userService.getLoginUser(request);
+
+        redisLimiterManager.doRateLimit("genChartByAi_" + loginUser.getId());
+
         StringBuilder userInput = new StringBuilder();
         userInput.append(AiManager.PRECONDITION);
         userInput.append("分析需求：").append("\n");

@@ -54,6 +54,9 @@ const AddChart: React.FC = () => {
           <Card title="智能分析">
             <Form
               name="addChart"
+              lableAlign="left"
+              labelCol={{span: 4}}
+              wrapperCol={{span: 16}}
               onFinish={onFinish}
               initialValues={{}}
             >
@@ -88,14 +91,14 @@ const AddChart: React.FC = () => {
                 name="file"
                 label="原始数据"
               >
-                <Upload name="file">
+                <Upload name="file" maxCount={1}>
                   <Button icon={<UploadOutlined/>}>上传 CSV 文件</Button>
                 </Upload>
               </Form.Item>
 
-              <Form.Item wrapperCol={{span: 12, offset: 6}}>
+              <Form.Item wrapperCol={{span: 16, offset: 4}}>
                 <Space>
-                  <Button type="primary" htmlType="submit">
+                  <Button type="primary" htmlType="submit" loading={submitting} disabled={submitting}>
                     提交
                   </Button>
                   <Button htmlType="reset">重置</Button>

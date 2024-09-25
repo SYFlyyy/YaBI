@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shaoya.yabi.annotation.AuthCheck;
+import com.shaoya.yabi.bizmq.BiMessageProducer;
 import com.shaoya.yabi.common.*;
 import com.shaoya.yabi.constant.CommonConstant;
 import com.shaoya.yabi.constant.UserConstant;
@@ -57,6 +58,9 @@ public class ChartController {
 
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
+
+    @Resource
+    private BiMessageProducer biMessageProducer;
 
     // region 增删改查
 
@@ -411,14 +415,14 @@ public class ChartController {
             updateChart.setStatus(ChartStatus.RUNNING);
             boolean b = chartService.updateById(updateChart);
             if (!b) {
-                handleChartUpdateError(chart.getId(), "更新图表执行中状态失败");
+                chartService.handleChartUpdateError(chart.getId(), "更新图表执行中状态失败");
             }
 
             String result = aiManager.sendMesToAiBySpark(userInput.toString());
             // 对结果进行拆分
             String[] split = result.split("【【【【【");
             if (split.length < 3) {
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "AI 生成错误");
+                chartService.handleChartUpdateError(chart.getId(), "AI 生成错误");
             }
             String genChart = split[1].trim();
             String genResult = split[2].trim();
@@ -430,7 +434,7 @@ public class ChartController {
             updateChartResult.setStatus(ChartStatus.SUCCEED);
             boolean updateResult = chartService.updateById(updateChartResult);
             if (!updateResult) {
-                handleChartUpdateError(chart.getId(), "更新图表成功状态失败");
+                chartService.handleChartUpdateError(chart.getId(), "更新图表成功状态失败");
             }
         }, threadPoolExecutor);
         BiResponse biResponse = new BiResponse();
@@ -438,15 +442,75 @@ public class ChartController {
         return ResultUtils.success(biResponse);
     }
 
-    private void handleChartUpdateError(long chartId, String execMessage) {
-        Chart updateChart = new Chart();
-        updateChart.setId(chartId);
-        updateChart.setStatus(ChartStatus.Failed);
-        updateChart.setExecMessage(execMessage);
-        boolean updateResult = chartService.updateById(updateChart);
-        if (!updateResult) {
-            log.error("更新图表状态失败" + chartId + "," + execMessage);
-        }
+    /**
+     * 智能分析（异步消息队列）
+     *
+     * @param multipartFile
+     * @param genChartByAiRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/gen/async/mq")
+    public BaseResponse<BiResponse> genChartByAiAsyncMq(@RequestPart("file") MultipartFile multipartFile,
+                                                      GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+        String name = genChartByAiRequest.getName();
+        String goal = genChartByAiRequest.getGoal();
+        String chartType = genChartByAiRequest.getChartType();
+        // 检验
+        // 分析目标为空则抛出异常
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "分析目标为空");
+        // 名称长度大于 100 则抛出异常
+        ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
+        // 校验文件
+        long size = multipartFile.getSize();
+        String fileName = multipartFile.getOriginalFilename();
+        // 文件大小限制 1MB
+        final long ONE_MB = 1024 * 1024;
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "文件超过 1MB");
+        // 校验文件后缀
+        System.out.println(fileName);
+        String suffix = FileUtil.getSuffix(fileName);
+        final List<String> validFileSuffix = Arrays.asList("xlsx", "xls");
+        ThrowUtils.throwIf(!validFileSuffix.contains(suffix), ErrorCode.PARAMS_ERROR, "文件格式非法");
+
+        User loginUser = userService.getLoginUser(request);
+
+        // 每个用户一个限流器
+        redisLimiterManager.doRateLimit("genChartByAi_" + loginUser.getId());
+
+        // StringBuilder userInput = new StringBuilder();
+        // userInput.append(AiManager.PRECONDITION);
+        // userInput.append("分析需求：").append("\n");
+        // String userGoal = goal;
+        // 如果图表类型不为空
+        // if(StringUtils.isNotBlank(chartType)) {
+            // 分析目标拼接上图表类型
+            // userGoal += "，请使用：" + chartType;
+        // }
+        // userInput.append(userGoal).append("\n");
+        // userInput.append("原始数据：").append("\n");
+        // 将数据转换为 csv 格式
+        String csvData = ExcelUtils.excelTOCsv(multipartFile);
+        // userInput.append(csvData).append("\n");
+
+        // 先将图表保存到数据库
+        Chart chart = new Chart();
+        chart.setName(name);
+        chart.setGoal(goal);
+        chart.setChartType(chartType);
+        chart.setChartData(csvData);
+        chart.setUserId(loginUser.getId());
+        // 设置图表状态为“排队中”
+        chart.setStatus(ChartStatus.WAIT);
+        boolean save = chartService.save(chart);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+
+        long chartId = chart.getId();
+        biMessageProducer.sendMessage(String.valueOf(chartId));
+
+        BiResponse biResponse = new BiResponse();
+        biResponse.setChartId(chart.getId());
+        return ResultUtils.success(biResponse);
     }
 
 }

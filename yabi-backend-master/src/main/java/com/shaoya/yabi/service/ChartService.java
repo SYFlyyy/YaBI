@@ -10,5 +10,7 @@ import com.shaoya.yabi.model.entity.Chart;
 * @createDate 2024-09-15 17:25:56
 */
 public interface ChartService extends IService<Chart> {
+    void handleChartUpdateError(Long chartId, String execMessage);
 
+    String buildUserInput(Chart chart);
 }

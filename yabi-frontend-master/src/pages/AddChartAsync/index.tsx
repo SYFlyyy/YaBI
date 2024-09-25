@@ -1,7 +1,7 @@
 import {Button, Card, Form, message, Select, Space, Upload} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {UploadOutlined} from "@ant-design/icons";
-import {genChartByAiAsyncUsingPost} from "@/services/yabi/chartController";
+import {genChartByAiAsyncMqUsingPost, genChartByAiAsyncUsingPost} from "@/services/yabi/chartController";
 import React, {useState} from "react";
 import {useForm} from "antd/es/form/Form";
 
@@ -24,7 +24,8 @@ const AddChartAsync: React.FC = () => {
       file: undefined,
     };
     try {
-      const res = await genChartByAiAsyncUsingPost(params, {}, value.file.file.originFileObj);
+      // const res = await genChartByAiAsyncUsingPost(params, {}, value.file.file.originFileObj);
+      const res = await genChartByAiAsyncMqUsingPost(params, {}, value.file.file.originFileObj);
       if (!res?.data) {
         message.error('分析失败');
       } else {

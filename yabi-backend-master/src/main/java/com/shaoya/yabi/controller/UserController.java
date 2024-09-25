@@ -6,7 +6,6 @@ import com.shaoya.yabi.common.BaseResponse;
 import com.shaoya.yabi.common.DeleteRequest;
 import com.shaoya.yabi.common.ErrorCode;
 import com.shaoya.yabi.common.ResultUtils;
-import com.shaoya.yabi.config.WxOpenConfig;
 import com.shaoya.yabi.constant.UserConstant;
 import com.shaoya.yabi.exception.BusinessException;
 import com.shaoya.yabi.exception.ThrowUtils;
@@ -23,13 +22,9 @@ import com.shaoya.yabi.model.vo.UserVO;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.shaoya.yabi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
-import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
-import me.chanjar.weixin.mp.api.WxMpService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.DigestUtils;
@@ -37,7 +32,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import static com.shaoya.yabi.service.impl.UserServiceImpl.SALT;
@@ -45,8 +39,7 @@ import static com.shaoya.yabi.service.impl.UserServiceImpl.SALT;
 /**
  * 用户接口
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * @author shaoyafan
  */
 @RestController
 @RequestMapping("/user")
@@ -55,9 +48,6 @@ public class UserController {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private WxOpenConfig wxOpenConfig;
 
     // region 登录相关
 

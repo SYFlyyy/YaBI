@@ -6,6 +6,8 @@ import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * 创建测试程序用到的交换机和队列
+ *
+ * @author shaoyafan
  */
 public class MqInitMain {
     public static void main(String[] args) {

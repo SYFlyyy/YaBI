@@ -5,6 +5,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+/**
+ * @author shaoyafan
+ */
 @Component
 public class MyMessageProducer {
     @Resource

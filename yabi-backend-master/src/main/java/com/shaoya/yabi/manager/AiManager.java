@@ -1,11 +1,5 @@
 package com.shaoya.yabi.manager;
 
-/*import com.shaoya.yabi.common.ErrorCode;
-import com.shaoya.yabi.exception.BusinessException;
-import com.yupi.yucongming.dev.client.YuCongMingClient;
-import com.yupi.yucongming.dev.common.BaseResponse;
-import com.yupi.yucongming.dev.model.DevChatRequest;
-import com.yupi.yucongming.dev.model.DevChatResponse;*/
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.model.SparkMessage;
@@ -18,6 +12,8 @@ import java.util.ArrayList;
 
 /**
  * 对接 AI 服务
+ *
+ * @author shaoyafan
  */
 @Component
 @Slf4j

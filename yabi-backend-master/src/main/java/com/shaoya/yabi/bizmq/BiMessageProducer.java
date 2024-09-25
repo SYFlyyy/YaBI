@@ -5,6 +5,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+/**
+ * BI 消息生产者
+ *
+ * @author shaoyafan
+ */
 @Component
 public class BiMessageProducer {
     @Resource

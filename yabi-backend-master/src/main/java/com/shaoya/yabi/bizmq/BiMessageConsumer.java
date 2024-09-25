@@ -17,6 +17,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+/**
+ * BI 消息消费者
+ *
+ * @author shaoyafan
+ */
 @Component
 @Slf4j
 public class BiMessageConsumer {

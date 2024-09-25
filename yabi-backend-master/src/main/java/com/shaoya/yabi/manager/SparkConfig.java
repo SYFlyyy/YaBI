@@ -6,6 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * 讯飞星火配置
+ *
+ * @author shaoyafan
+ */
 @Configuration
 @ConfigurationProperties(prefix = "xunfei.client")
 @Data

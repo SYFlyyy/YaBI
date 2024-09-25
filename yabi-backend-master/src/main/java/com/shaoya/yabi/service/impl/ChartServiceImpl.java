@@ -10,9 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
+ * 图表服务实现
+ *
 * @author shaoyafan
-* @description 针对表【chart(图表信息表)】的数据库操作Service实现
-* @createDate 2024-09-15 17:25:56
 */
 @Service
 public class ChartServiceImpl extends ServiceImpl<ChartMapper, Chart>

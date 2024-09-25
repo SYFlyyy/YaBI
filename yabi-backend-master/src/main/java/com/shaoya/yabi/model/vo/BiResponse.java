@@ -4,6 +4,8 @@ import lombok.Data;
 
 /**
  * BI 的返回结果
+ *
+ * @author shaoyafan
  */
 @Data
 public class BiResponse {

@@ -2,6 +2,8 @@ package com.shaoya.yabi.common;
 
 /**
  * 图表状态
+ *
+ * @author shaoyafan
  */
 public class ChartStatus {
     public static final String WAIT = "wait";

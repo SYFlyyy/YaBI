@@ -1,5 +1,8 @@
 package com.shaoya.yabi.manager;
 
+import com.shaoya.yabi.common.ErrorCode;
+import com.shaoya.yabi.exception.BusinessException;
+import com.shaoya.yabi.exception.ThrowUtils;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
@@ -30,7 +33,7 @@ public class RedisLimiterManager {
         // 每当一个操作来了，请求一个令牌
         boolean canOp = rateLimiter.tryAcquire(1);
         if (!canOp) {
-            throw new RuntimeException("请求过于频繁，请稍后再试");
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUEST);
         }
     }
 }
